@@ -1,0 +1,205 @@
+2026-09-07 10:09:32 | INFO | excel_analyzer | logger test ok
+2026-09-07 10:24:41 | INFO | excel_analyzer | 开始执行任务 | file=not_exist.xlsx | intent=overview | sheet=0
+2026-09-07 10:24:41 | WARNING | excel_analyzer | 业务异常 | code=FILE_NOT_FOUND | msg=文件不存在：not_exist.xlsx
+2026-09-07 10:25:40 | WARNING | excel_analyzer | 业务异常 | code=INVALID_INTENT | msg=非法意图[bad_intent]，合法意图仅支持：stats,anomaly,sort_filter,trend,overview
+2026-09-07 10:25:54 | INFO | excel_analyzer | 开始执行任务 | file=not_exist.xlsx | intent=trend | sheet=0
+2026-09-07 10:25:54 | WARNING | excel_analyzer | 业务异常 | code=FILE_NOT_FOUND | msg=文件不存在：not_exist.xlsx
+2026-09-07 10:34:37 | INFO | excel_analyzer | 开始执行任务 | file=not_exist.xlsx | intent=trend | sheet=0
+2026-09-07 10:34:37 | WARNING | excel_analyzer | 业务异常 | code=MISSING_ARG | msg=intent=trend 需要提供 --time_col 和 --value_col 参数
+2026-09-07 10:40:39 | INFO | excel_analyzer | 开始执行任务 | file=no_file.xlsx | intent=overview | sheet=0
+2026-09-07 10:40:39 | WARNING | excel_analyzer | 业务异常 | code=FILE_NOT_FOUND | msg=文件不存在：no_file.xlsx
+2026-09-07 10:40:40 | WARNING | excel_analyzer | 业务异常 | code=INVALID_INTENT | msg=非法意图[wrong_intent]，合法意图仅支持：overview,anomaly,trend,stats,sort_filter
+2026-09-07 10:40:42 | INFO | excel_analyzer | 开始执行任务 | file=no_file.xlsx | intent=trend | sheet=0
+2026-09-07 10:40:42 | WARNING | excel_analyzer | 业务异常 | code=MISSING_ARG | msg=intent=trend 需要提供 --time_col 和 --value_col 参数
+2026-09-07 10:40:43 | INFO | excel_analyzer | 开始执行任务 | file=demo.txt | intent=overview | sheet=0
+2026-09-07 10:40:43 | WARNING | excel_analyzer | 业务异常 | code=FILE_NOT_FOUND | msg=文件不存在：demo.txt
+2026-09-07 10:41:10 | INFO | excel_analyzer | 开始执行任务 | file=no_file.xlsx | intent=overview | sheet=0
+2026-09-07 10:41:10 | WARNING | excel_analyzer | 业务异常 | code=FILE_NOT_FOUND | msg=文件不存在：no_file.xlsx
+2026-09-07 10:41:12 | WARNING | excel_analyzer | 业务异常 | code=INVALID_INTENT | msg=非法意图[wrong_intent]，合法意图仅支持：overview,trend,anomaly,sort_filter,stats
+2026-09-07 10:41:13 | INFO | excel_analyzer | 开始执行任务 | file=no_file.xlsx | intent=trend | sheet=0
+2026-09-07 10:41:13 | WARNING | excel_analyzer | 业务异常 | code=MISSING_ARG | msg=intent=trend 需要提供 --time_col 和 --value_col 参数
+2026-09-07 10:41:14 | INFO | excel_analyzer | 开始执行任务 | file=demo.txt | intent=overview | sheet=0
+2026-09-07 10:41:14 | WARNING | excel_analyzer | 业务异常 | code=FILE_NOT_FOUND | msg=文件不存在：demo.txt
+2026-09-07 10:43:44 | INFO | excel_analyzer | 开始执行任务 | file=no_file.xlsx | intent=overview | sheet=0
+2026-09-07 10:43:44 | WARNING | excel_analyzer | 业务异常 | code=FILE_NOT_FOUND | msg=文件不存在：no_file.xlsx
+2026-09-07 10:43:45 | WARNING | excel_analyzer | 业务异常 | code=INVALID_INTENT | msg=非法意图[wrong_intent]，合法意图仅支持：stats,anomaly,trend,overview,sort_filter
+2026-09-07 10:43:46 | INFO | excel_analyzer | 开始执行任务 | file=no_file.xlsx | intent=trend | sheet=0
+2026-09-07 10:43:46 | WARNING | excel_analyzer | 业务异常 | code=MISSING_ARG | msg=intent=trend 需要提供 --time_col 和 --value_col 参数
+2026-09-07 10:43:47 | INFO | excel_analyzer | 开始执行任务 | file=demo.txt | intent=overview | sheet=0
+2026-09-07 10:43:47 | WARNING | excel_analyzer | 业务异常 | code=FILE_NOT_FOUND | msg=文件不存在：demo.txt
+2026-09-07 10:44:22 | INFO | excel_analyzer | 开始执行任务 | file=no_file.xlsx | intent=overview | sheet=0
+2026-09-07 10:44:22 | WARNING | excel_analyzer | 业务异常 | code=FILE_NOT_FOUND | msg=文件不存在：no_file.xlsx
+2026-09-07 10:44:24 | WARNING | excel_analyzer | 业务异常 | code=INVALID_INTENT | msg=非法意图[wrong_intent]，合法意图仅支持：sort_filter,overview,trend,stats,anomaly
+2026-09-07 10:44:25 | INFO | excel_analyzer | 开始执行任务 | file=no_file.xlsx | intent=trend | sheet=0
+2026-09-07 10:44:25 | WARNING | excel_analyzer | 业务异常 | code=MISSING_ARG | msg=intent=trend 需要提供 --time_col 和 --value_col 参数
+2026-09-07 10:44:26 | INFO | excel_analyzer | 开始执行任务 | file=demo.txt | intent=overview | sheet=0
+2026-09-07 10:44:26 | WARNING | excel_analyzer | 业务异常 | code=FILE_NOT_FOUND | msg=文件不存在：demo.txt
+2026-09-07 10:47:51 | INFO | excel_analyzer | 开始执行任务 | file=no_file.xlsx | intent=overview | sheet=0
+2026-09-07 10:47:51 | WARNING | excel_analyzer | 业务异常 | code=FILE_NOT_FOUND | msg=文件不存在：no_file.xlsx
+2026-09-07 10:47:52 | WARNING | excel_analyzer | 业务异常 | code=INVALID_INTENT | msg=非法意图[wrong_intent]，合法意图仅支持：sort_filter,anomaly,stats,trend,overview
+2026-09-07 10:47:53 | INFO | excel_analyzer | 开始执行任务 | file=no_file.xlsx | intent=trend | sheet=0
+2026-09-07 10:47:53 | WARNING | excel_analyzer | 业务异常 | code=MISSING_ARG | msg=intent=trend 需要提供 --time_col 和 --value_col 参数
+2026-09-07 10:47:54 | INFO | excel_analyzer | 开始执行任务 | file=D:\2026xiaoxueqi\ai_excel_agent\tests\test_data\bad_suffix.txt | intent=overview | sheet=0
+2026-09-07 10:47:54 | WARNING | excel_analyzer | 业务异常 | code=INVALID_SUFFIX | msg=不支持文件后缀 .txt, 仅支持 {'.xls', '.xlsx'}
+2026-09-07 10:52:22 | INFO | excel_analyzer | 开始执行任务 | file=no_file.xlsx | intent=overview | sheet=0
+2026-09-07 10:52:22 | WARNING | excel_analyzer | 业务异常 | code=FILE_NOT_FOUND | msg=文件不存在：no_file.xlsx
+2026-09-07 10:52:23 | WARNING | excel_analyzer | 业务异常 | code=INVALID_INTENT | msg=非法意图[wrong_intent]，合法意图仅支持：anomaly,sort_filter,trend,stats,overview
+2026-09-07 10:52:24 | INFO | excel_analyzer | 开始执行任务 | file=no_file.xlsx | intent=trend | sheet=0
+2026-09-07 10:52:24 | WARNING | excel_analyzer | 业务异常 | code=MISSING_ARG | msg=intent=trend 需要提供 --time_col 和 --value_col 参数
+2026-09-07 10:52:25 | INFO | excel_analyzer | 开始执行任务 | file=D:\2026xiaoxueqi\ai_excel_agent\tests\test_data\bad_suffix.txt | intent=overview | sheet=0
+2026-09-07 10:52:25 | WARNING | excel_analyzer | 业务异常 | code=INVALID_SUFFIX | msg=不支持文件后缀 .txt, 仅支持 {'.xlsx', '.xls'}
+2026-09-07 10:52:26 | INFO | excel_analyzer | 开始执行任务 | file=D:\2026xiaoxueqi\ai_excel_agent\tests\test_data\sample_test.xlsx | intent=overview | sheet=NotExistSheet
+2026-09-07 10:52:26 | WARNING | excel_analyzer | 业务异常 | code=SHEET_NOT_EXIST | msg=Sheet名称[NotExistSheet]不存在，当前sheet列表：['销售数据', '员工信息']
+2026-09-07 10:52:27 | INFO | excel_analyzer | 开始执行任务 | file=D:\2026xiaoxueqi\ai_excel_agent\tests\test_data\sample_test.xlsx | intent=overview | sheet=0
+2026-09-07 10:52:27 | INFO | excel_analyzer | 任务执行成功 | intent=overview
+2026-09-07 10:52:28 | INFO | excel_analyzer | 开始执行任务 | file=D:\2026xiaoxueqi\ai_excel_agent\tests\test_data\sample_test.xlsx | intent=stats | sheet=0
+2026-09-07 10:52:29 | INFO | excel_analyzer | 任务执行成功 | intent=stats
+2026-09-07 10:52:30 | INFO | excel_analyzer | 开始执行任务 | file=D:\2026xiaoxueqi\ai_excel_agent\tests\test_data\sample_test.xlsx | intent=sort_filter | sheet=0
+2026-09-07 10:52:30 | INFO | excel_analyzer | 任务执行成功 | intent=sort_filter
+2026-09-07 10:52:31 | INFO | excel_analyzer | 开始执行任务 | file=D:\2026xiaoxueqi\ai_excel_agent\tests\test_data\sample_test.xlsx | intent=trend | sheet=0
+2026-09-07 10:52:31 | WARNING | excel_analyzer | 业务异常 | code=DATA_TYPE_ERR | msg=时间列[日期]无法解析为时间格式：Unknown datetime string format, unable to parse: not_a_date, at position 30
+2026-09-07 10:52:32 | INFO | excel_analyzer | 开始执行任务 | file=D:\2026xiaoxueqi\ai_excel_agent\tests\test_data\sample_test.xlsx | intent=anomaly | sheet=0
+2026-09-07 10:52:33 | INFO | excel_analyzer | 任务执行成功 | intent=anomaly
+2026-09-07 11:09:38 | INFO | excel_analyzer | 开始执行任务 | file=no_file.xlsx | intent=overview | sheet=0
+2026-09-07 11:09:38 | WARNING | excel_analyzer | 业务异常 | code=FILE_NOT_FOUND | msg=文件不存在：no_file.xlsx
+2026-09-07 11:09:39 | WARNING | excel_analyzer | 业务异常 | code=INVALID_INTENT | msg=非法意图[wrong_intent]，合法意图仅支持：trend,anomaly,sort_filter,stats,overview
+2026-09-07 11:09:40 | INFO | excel_analyzer | 开始执行任务 | file=no_file.xlsx | intent=trend | sheet=0
+2026-09-07 11:09:40 | WARNING | excel_analyzer | 业务异常 | code=MISSING_ARG | msg=intent=trend 需要提供 --time_col 和 --value_col 参数
+2026-09-07 11:09:41 | INFO | excel_analyzer | 开始执行任务 | file=D:\2026xiaoxueqi\ai_excel_agent\tests\test_data\bad_suffix.txt | intent=overview | sheet=0
+2026-09-07 11:09:41 | WARNING | excel_analyzer | 业务异常 | code=INVALID_SUFFIX | msg=不支持文件后缀 .txt, 仅支持 {'.xls', '.xlsx'}
+2026-09-07 11:09:42 | INFO | excel_analyzer | 开始执行任务 | file=D:\2026xiaoxueqi\ai_excel_agent\tests\test_data\sample_test.xlsx | intent=overview | sheet=NotExistSheet
+2026-09-07 11:09:43 | WARNING | excel_analyzer | 业务异常 | code=SHEET_NOT_EXIST | msg=Sheet名称[NotExistSheet]不存在，当前sheet列表：['销售数据', '员工信息']
+2026-09-07 11:09:44 | INFO | excel_analyzer | 开始执行任务 | file=D:\2026xiaoxueqi\ai_excel_agent\tests\test_data\sample_test.xlsx | intent=overview | sheet=0
+2026-09-07 11:09:44 | INFO | excel_analyzer | 任务执行成功 | intent=overview
+2026-09-07 11:09:45 | INFO | excel_analyzer | 开始执行任务 | file=D:\2026xiaoxueqi\ai_excel_agent\tests\test_data\sample_test.xlsx | intent=stats | sheet=0
+2026-09-07 11:09:45 | INFO | excel_analyzer | 任务执行成功 | intent=stats
+2026-09-07 11:09:46 | INFO | excel_analyzer | 开始执行任务 | file=D:\2026xiaoxueqi\ai_excel_agent\tests\test_data\sample_test.xlsx | intent=sort_filter | sheet=0
+2026-09-07 11:09:47 | INFO | excel_analyzer | 任务执行成功 | intent=sort_filter
+2026-09-07 11:09:48 | INFO | excel_analyzer | 开始执行任务 | file=D:\2026xiaoxueqi\ai_excel_agent\tests\test_data\sample_test.xlsx | intent=trend | sheet=0
+2026-09-07 11:09:48 | WARNING | excel_analyzer | 业务异常 | code=DATA_TYPE_ERR | msg=时间列[日期]无法解析为时间格式：Unknown datetime string format, unable to parse: not_a_date, at position 30
+2026-09-07 11:09:49 | INFO | excel_analyzer | 开始执行任务 | file=D:\2026xiaoxueqi\ai_excel_agent\tests\test_data\sample_test.xlsx | intent=anomaly | sheet=0
+2026-09-07 11:09:49 | INFO | excel_analyzer | 任务执行成功 | intent=anomaly
+2026-09-07 11:16:53 | INFO | excel_analyzer | 开始执行任务 | file=no_file.xlsx | intent=overview | sheet=0
+2026-09-07 11:16:53 | WARNING | excel_analyzer | 业务异常 | code=FILE_NOT_FOUND | msg=文件不存在：no_file.xlsx
+2026-09-07 11:16:54 | WARNING | excel_analyzer | 业务异常 | code=INVALID_INTENT | msg=非法意图[wrong_intent]，合法意图仅支持：sort_filter,overview,anomaly,stats,trend
+2026-09-07 11:16:55 | INFO | excel_analyzer | 开始执行任务 | file=no_file.xlsx | intent=trend | sheet=0
+2026-09-07 11:16:55 | WARNING | excel_analyzer | 业务异常 | code=MISSING_ARG | msg=intent=trend 需要提供 --time_col 和 --value_col 参数
+2026-09-07 11:16:56 | INFO | excel_analyzer | 开始执行任务 | file=D:\2026xiaoxueqi\ai_excel_agent\tests\test_data\bad_suffix.txt | intent=overview | sheet=0
+2026-09-07 11:16:56 | WARNING | excel_analyzer | 业务异常 | code=INVALID_SUFFIX | msg=不支持文件后缀 .txt, 仅支持 {'.xls', '.xlsx'}
+2026-09-07 11:16:57 | INFO | excel_analyzer | 开始执行任务 | file=D:\2026xiaoxueqi\ai_excel_agent\tests\test_data\sample_test.xlsx | intent=overview | sheet=NotExistSheet
+2026-09-07 11:16:57 | WARNING | excel_analyzer | 业务异常 | code=SHEET_NOT_EXIST | msg=Sheet名称[NotExistSheet]不存在，当前sheet列表：['销售数据', '员工信息']
+2026-09-07 11:16:58 | INFO | excel_analyzer | 开始执行任务 | file=D:\2026xiaoxueqi\ai_excel_agent\tests\test_data\sample_test.xlsx | intent=overview | sheet=0
+2026-09-07 11:16:59 | INFO | excel_analyzer | 任务执行成功 | intent=overview
+2026-09-07 11:17:00 | INFO | excel_analyzer | 开始执行任务 | file=D:\2026xiaoxueqi\ai_excel_agent\tests\test_data\sample_test.xlsx | intent=stats | sheet=0
+2026-09-07 11:17:00 | INFO | excel_analyzer | 任务执行成功 | intent=stats
+2026-09-07 11:17:01 | INFO | excel_analyzer | 开始执行任务 | file=D:\2026xiaoxueqi\ai_excel_agent\tests\test_data\sample_test.xlsx | intent=sort_filter | sheet=0
+2026-09-07 11:17:01 | INFO | excel_analyzer | 任务执行成功 | intent=sort_filter
+2026-09-07 11:17:02 | INFO | excel_analyzer | 开始执行任务 | file=D:\2026xiaoxueqi\ai_excel_agent\tests\test_data\sample_test.xlsx | intent=trend | sheet=0
+2026-09-07 11:17:02 | WARNING | excel_analyzer | 业务异常 | code=DATA_TYPE_ERR | msg=时间列[日期]无法解析为时间格式：Unknown datetime string format, unable to parse: not_a_date, at position 30
+2026-09-07 11:17:03 | INFO | excel_analyzer | 开始执行任务 | file=D:\2026xiaoxueqi\ai_excel_agent\tests\test_data\sample_test.xlsx | intent=anomaly | sheet=0
+2026-09-07 11:17:04 | INFO | excel_analyzer | 任务执行成功 | intent=anomaly
+2026-09-07 11:19:58 | INFO | excel_analyzer | 开始执行任务 | file=d:\2026xiaoxueqi\ai_excel_agent\tests\test_data\sample_test.xlsx | intent=overview | sheet=0
+2026-09-07 11:19:58 | INFO | excel_analyzer | 任务执行成功 | intent=overview
+2026-09-07 11:19:59 | INFO | excel_analyzer | 开始执行任务 | file=d:\2026xiaoxueqi\ai_excel_agent\tests\test_data\sample_test.xlsx | intent=overview | sheet=0
+2026-09-07 11:19:59 | INFO | excel_analyzer | 任务执行成功 | intent=overview
+2026-09-07 11:20:00 | INFO | excel_analyzer | 开始执行任务 | file=d:\2026xiaoxueqi\ai_excel_agent\tests\test_data\sample_test.xlsx | intent=overview | sheet=0
+2026-09-07 11:20:01 | INFO | excel_analyzer | 任务执行成功 | intent=overview
+2026-09-07 11:20:26 | INFO | excel_analyzer | 开始执行任务 | file=D:\2026xiaoxueqi\ai_excel_agent\tests\test_data\sample_test.xlsx | intent=overview | sheet=0
+2026-09-07 11:20:27 | INFO | excel_analyzer | 任务执行成功 | intent=overview
+2026-09-07 11:20:28 | INFO | excel_analyzer | 开始执行任务 | file=D:\2026xiaoxueqi\ai_excel_agent\tests\test_data\sample_test.xlsx | intent=overview | sheet=0
+2026-09-07 11:20:28 | INFO | excel_analyzer | 任务执行成功 | intent=overview
+2026-09-07 11:20:29 | INFO | excel_analyzer | 开始执行任务 | file=D:\2026xiaoxueqi\ai_excel_agent\tests\test_data\sample_test.xlsx | intent=overview | sheet=0
+2026-09-07 11:20:29 | INFO | excel_analyzer | 任务执行成功 | intent=overview
+2026-09-07 11:24:59 | INFO | excel_analyzer | 开始执行任务 | file=no_file.xlsx | intent=overview | sheet=0
+2026-09-07 11:24:59 | WARNING | excel_analyzer | 业务异常 | code=FILE_NOT_FOUND | msg=文件不存在：no_file.xlsx
+2026-09-07 11:25:00 | WARNING | excel_analyzer | 业务异常 | code=INVALID_INTENT | msg=非法意图[wrong_intent]，合法意图仅支持：overview,sort_filter,stats,trend,anomaly
+2026-09-07 11:25:01 | INFO | excel_analyzer | 开始执行任务 | file=no_file.xlsx | intent=trend | sheet=0
+2026-09-07 11:25:01 | WARNING | excel_analyzer | 业务异常 | code=MISSING_ARG | msg=intent=trend 需要提供 --time_col 和 --value_col 参数
+2026-09-07 11:25:01 | INFO | excel_analyzer | 开始执行任务 | file=D:\2026xiaoxueqi\ai_excel_agent\tests\test_data\bad_suffix.txt | intent=overview | sheet=0
+2026-09-07 11:25:01 | WARNING | excel_analyzer | 业务异常 | code=INVALID_SUFFIX | msg=不支持文件后缀 .txt, 仅支持 {'.xlsx', '.xls'}
+2026-09-07 11:25:02 | INFO | excel_analyzer | 开始执行任务 | file=D:\2026xiaoxueqi\ai_excel_agent\tests\test_data\sample_test.xlsx | intent=overview | sheet=NotExistSheet
+2026-09-07 11:25:03 | WARNING | excel_analyzer | 业务异常 | code=SHEET_NOT_EXIST | msg=Sheet名称[NotExistSheet]不存在，当前sheet列表：['销售数据', '员工信息']
+2026-09-07 11:25:04 | INFO | excel_analyzer | 开始执行任务 | file=D:\2026xiaoxueqi\ai_excel_agent\tests\test_data\sample_test.xlsx | intent=overview | sheet=0
+2026-09-07 11:25:04 | INFO | excel_analyzer | 任务执行成功 | intent=overview
+2026-09-07 11:25:05 | INFO | excel_analyzer | 开始执行任务 | file=D:\2026xiaoxueqi\ai_excel_agent\tests\test_data\sample_test.xlsx | intent=stats | sheet=0
+2026-09-07 11:25:06 | INFO | excel_analyzer | 任务执行成功 | intent=stats
+2026-09-07 11:25:07 | INFO | excel_analyzer | 开始执行任务 | file=D:\2026xiaoxueqi\ai_excel_agent\tests\test_data\sample_test.xlsx | intent=sort_filter | sheet=0
+2026-09-07 11:25:07 | INFO | excel_analyzer | 任务执行成功 | intent=sort_filter
+2026-09-07 11:25:08 | INFO | excel_analyzer | 开始执行任务 | file=D:\2026xiaoxueqi\ai_excel_agent\tests\test_data\sample_test.xlsx | intent=trend | sheet=0
+2026-09-07 11:25:08 | WARNING | excel_analyzer | 业务异常 | code=DATA_TYPE_ERR | msg=时间列[日期]无法解析为时间格式：Unknown datetime string format, unable to parse: not_a_date, at position 30
+2026-09-07 11:25:09 | INFO | excel_analyzer | 开始执行任务 | file=D:\2026xiaoxueqi\ai_excel_agent\tests\test_data\sample_test.xlsx | intent=anomaly | sheet=0
+2026-09-07 11:25:10 | INFO | excel_analyzer | 任务执行成功 | intent=anomaly
+2026-09-07 13:16:56 | INFO | excel_analyzer | 开始执行任务 | file=tests/test_data/sample_test.xlsx | intent=overview | sheet=销售数据
+2026-09-07 13:16:58 | INFO | excel_analyzer | 任务执行成功 | intent=overview
+2026-09-07 13:16:59 | INFO | excel_analyzer | 开始执行任务 | file=tests/test_data/sample_test.xlsx | intent=stats | sheet=销售数据
+2026-09-07 13:17:00 | INFO | excel_analyzer | 任务执行成功 | intent=stats
+2026-09-07 13:17:01 | INFO | excel_analyzer | 开始执行任务 | file=tests/test_data/sample_test.xlsx | intent=sort_filter | sheet=销售数据
+2026-09-07 13:17:01 | INFO | excel_analyzer | 任务执行成功 | intent=sort_filter
+2026-09-07 13:17:02 | INFO | excel_analyzer | 开始执行任务 | file=tests/test_data/sample_test.xlsx | intent=trend | sheet=销售数据
+2026-09-07 13:17:02 | WARNING | excel_analyzer | 业务异常 | code=DATA_TYPE_ERR | msg=时间列[日期]无法解析为时间格式：Unknown datetime string format, unable to parse: not_a_date, at position 30
+2026-09-07 13:17:03 | INFO | excel_analyzer | 开始执行任务 | file=tests/test_data/sample_test.xlsx | intent=anomaly | sheet=销售数据
+2026-09-07 13:17:04 | INFO | excel_analyzer | 任务执行成功 | intent=anomaly
+2026-09-08 17:30:34 | INFO | excel_analyzer | 开始执行任务 | file=tests/test_data/sample_test.xlsx | intent=overview | sheet=销售数据
+2026-09-08 17:30:37 | INFO | excel_analyzer | 任务执行成功 | intent=overview
+2026-09-08 22:09:36 | INFO | excel_analyzer | 开始执行任务 | file=tests/test_data/sample_test.xlsx | intent=overview | sheet=销售数据
+2026-09-08 22:09:37 | INFO | excel_analyzer | 任务执行成功 | intent=overview
+2026-09-08 22:09:52 | INFO | excel_analyzer | 开始执行任务 | file=D:\2026xiaoxueqi\test.xlsx | intent=overview | sheet=0
+2026-09-08 22:09:52 | INFO | excel_analyzer | 任务执行成功 | intent=overview
+2026-09-08 22:12:48 | INFO | excel_analyzer | 开始执行任务 | file=D:\2026xiaoxueqi\test.xlsx | intent=overview | sheet=0
+2026-09-08 22:12:48 | INFO | excel_analyzer | 任务执行成功 | intent=overview
+2026-09-08 22:23:13 | INFO | excel_analyzer | 开始执行任务 | file=D:\2026xiaoxueqi\test.xlsx | intent=overview | sheet=0
+2026-09-08 22:23:13 | INFO | excel_analyzer | 任务执行成功 | intent=overview
+2026-09-08 22:47:58 | INFO | excel_analyzer | 开始执行任务 | file=D:\2026xiaoxueqi\ai_excel_agent\tests\test_data\bad_suffix.txt | intent=overview | sheet=0
+2026-09-08 22:47:58 | WARNING | excel_analyzer | 业务异常 | code=INVALID_SUFFIX | msg=不支持文件后缀 .txt, 仅支持 {'.xls', '.xlsx'}
+2026-09-08 22:47:59 | INFO | excel_analyzer | 开始执行任务 | file=D:\2026xiaoxueqi\ai_excel_agent\tests\test_data\sample_test.xlsx | intent=overview | sheet=NotExistSheet
+2026-09-08 22:47:59 | WARNING | excel_analyzer | 业务异常 | code=SHEET_NOT_EXIST | msg=Sheet名称[NotExistSheet]不存在，当前sheet列表：['销售数据', '员工信息']
+2026-09-08 22:48:00 | INFO | excel_analyzer | 开始执行任务 | file=D:\2026xiaoxueqi\ai_excel_agent\tests\test_data\sample_test.xlsx | intent=overview | sheet=0
+2026-09-08 22:48:01 | INFO | excel_analyzer | 任务执行成功 | intent=overview
+2026-09-08 22:48:02 | INFO | excel_analyzer | 开始执行任务 | file=D:\2026xiaoxueqi\ai_excel_agent\tests\test_data\sample_test.xlsx | intent=stats | sheet=0
+2026-09-08 22:48:02 | INFO | excel_analyzer | 任务执行成功 | intent=stats
+2026-09-08 22:48:03 | INFO | excel_analyzer | 开始执行任务 | file=D:\2026xiaoxueqi\ai_excel_agent\tests\test_data\sample_test.xlsx | intent=sort_filter | sheet=0
+2026-09-08 22:48:03 | INFO | excel_analyzer | 任务执行成功 | intent=sort_filter
+2026-09-08 22:48:04 | INFO | excel_analyzer | 开始执行任务 | file=D:\2026xiaoxueqi\ai_excel_agent\tests\test_data\sample_test.xlsx | intent=trend | sheet=0
+2026-09-08 22:48:05 | WARNING | excel_analyzer | 业务异常 | code=DATA_TYPE_ERR | msg=时间列[日期]无法解析为时间格式：Unknown datetime string format, unable to parse: not_a_date, at position 30
+2026-09-08 22:48:06 | INFO | excel_analyzer | 开始执行任务 | file=D:\2026xiaoxueqi\ai_excel_agent\tests\test_data\sample_test.xlsx | intent=anomaly | sheet=0
+2026-09-08 22:48:06 | INFO | excel_analyzer | 任务执行成功 | intent=anomaly
+2026-09-08 22:51:47 | INFO | excel_analyzer | 开始执行任务 | file=tests/test_data/no_file.xlsx | intent=overview | sheet=0
+2026-09-08 22:51:47 | WARNING | excel_analyzer | 业务异常 | code=PARSE_EXCEL_FAILED | msg=Excel文件解析失败: Excel file format cannot be determined, you must specify an engine manually.
+2026-09-08 22:51:48 | WARNING | excel_analyzer | 业务异常 | code=INVALID_INTENT | msg=非法意图[wrong_intent]，合法意图仅支持：stats,anomaly,overview,sort_filter,trend
+2026-09-08 22:51:49 | INFO | excel_analyzer | 开始执行任务 | file=tests/test_data/no_file.xlsx | intent=trend | sheet=0
+2026-09-08 22:51:49 | WARNING | excel_analyzer | 业务异常 | code=MISSING_ARG | msg=intent=trend 需要提供 --time_col 和 --value_col 参数
+2026-09-08 22:51:50 | INFO | excel_analyzer | 开始执行任务 | file=D:\2026xiaoxueqi\ai_excel_agent\tests\test_data\bad_suffix.txt | intent=overview | sheet=0
+2026-09-08 22:51:50 | WARNING | excel_analyzer | 业务异常 | code=INVALID_SUFFIX | msg=不支持文件后缀 .txt, 仅支持 {'.xlsx', '.xls'}
+2026-09-08 22:51:51 | INFO | excel_analyzer | 开始执行任务 | file=D:\2026xiaoxueqi\ai_excel_agent\tests\test_data\sample_test.xlsx | intent=overview | sheet=NotExistSheet
+2026-09-08 22:51:51 | WARNING | excel_analyzer | 业务异常 | code=SHEET_NOT_EXIST | msg=Sheet名称[NotExistSheet]不存在，当前sheet列表：['销售数据', '员工信息']
+2026-09-08 22:51:52 | INFO | excel_analyzer | 开始执行任务 | file=D:\2026xiaoxueqi\ai_excel_agent\tests\test_data\sample_test.xlsx | intent=overview | sheet=0
+2026-09-08 22:51:52 | INFO | excel_analyzer | 任务执行成功 | intent=overview
+2026-09-08 22:51:53 | INFO | excel_analyzer | 开始执行任务 | file=D:\2026xiaoxueqi\ai_excel_agent\tests\test_data\sample_test.xlsx | intent=stats | sheet=0
+2026-09-08 22:51:54 | INFO | excel_analyzer | 任务执行成功 | intent=stats
+2026-09-08 22:51:55 | INFO | excel_analyzer | 开始执行任务 | file=D:\2026xiaoxueqi\ai_excel_agent\tests\test_data\sample_test.xlsx | intent=sort_filter | sheet=0
+2026-09-08 22:51:55 | INFO | excel_analyzer | 任务执行成功 | intent=sort_filter
+2026-09-08 22:51:56 | INFO | excel_analyzer | 开始执行任务 | file=D:\2026xiaoxueqi\ai_excel_agent\tests\test_data\sample_test.xlsx | intent=trend | sheet=0
+2026-09-08 22:51:57 | WARNING | excel_analyzer | 业务异常 | code=DATA_TYPE_ERR | msg=时间列[日期]无法解析为时间格式：Unknown datetime string format, unable to parse: not_a_date, at position 30
+2026-09-08 22:51:58 | INFO | excel_analyzer | 开始执行任务 | file=D:\2026xiaoxueqi\ai_excel_agent\tests\test_data\sample_test.xlsx | intent=anomaly | sheet=0
+2026-09-08 22:51:58 | INFO | excel_analyzer | 任务执行成功 | intent=anomaly
+2026-09-08 22:54:06 | INFO | excel_analyzer | 开始执行任务 | file=tests/test_data/no_file.xlsx | intent=overview | sheet=0
+2026-09-08 22:54:06 | WARNING | excel_analyzer | 业务异常 | code=FILE_NOT_FOUND | msg=文件不存在：tests/test_data/no_file.xlsx
+2026-09-08 22:54:07 | WARNING | excel_analyzer | 业务异常 | code=INVALID_INTENT | msg=非法意图[wrong_intent]，合法意图仅支持：anomaly,sort_filter,trend,stats,overview
+2026-09-08 22:54:08 | INFO | excel_analyzer | 开始执行任务 | file=tests/test_data/no_file.xlsx | intent=trend | sheet=0
+2026-09-08 22:54:08 | WARNING | excel_analyzer | 业务异常 | code=MISSING_ARG | msg=intent=trend 需要提供 --time_col 和 --value_col 参数
+2026-09-08 22:54:09 | INFO | excel_analyzer | 开始执行任务 | file=D:\2026xiaoxueqi\ai_excel_agent\tests\test_data\bad_suffix.txt | intent=overview | sheet=0
+2026-09-08 22:54:09 | WARNING | excel_analyzer | 业务异常 | code=INVALID_SUFFIX | msg=不支持文件后缀 .txt, 仅支持 {'.xlsx', '.xls'}
+2026-09-08 22:54:10 | INFO | excel_analyzer | 开始执行任务 | file=D:\2026xiaoxueqi\ai_excel_agent\tests\test_data\sample_test.xlsx | intent=overview | sheet=NotExistSheet
+2026-09-08 22:54:10 | WARNING | excel_analyzer | 业务异常 | code=SHEET_NOT_EXIST | msg=Sheet名称[NotExistSheet]不存在，当前sheet列表：['销售数据', '员工信息']
+2026-09-08 22:54:11 | INFO | excel_analyzer | 开始执行任务 | file=D:\2026xiaoxueqi\ai_excel_agent\tests\test_data\sample_test.xlsx | intent=overview | sheet=0
+2026-09-08 22:54:12 | INFO | excel_analyzer | 任务执行成功 | intent=overview
+2026-09-08 22:54:13 | INFO | excel_analyzer | 开始执行任务 | file=D:\2026xiaoxueqi\ai_excel_agent\tests\test_data\sample_test.xlsx | intent=stats | sheet=0
+2026-09-08 22:54:13 | INFO | excel_analyzer | 任务执行成功 | intent=stats
+2026-09-08 22:54:14 | INFO | excel_analyzer | 开始执行任务 | file=D:\2026xiaoxueqi\ai_excel_agent\tests\test_data\sample_test.xlsx | intent=sort_filter | sheet=0
+2026-09-08 22:54:14 | INFO | excel_analyzer | 任务执行成功 | intent=sort_filter
+2026-09-08 22:54:15 | INFO | excel_analyzer | 开始执行任务 | file=D:\2026xiaoxueqi\ai_excel_agent\tests\test_data\sample_test.xlsx | intent=trend | sheet=0
+2026-09-08 22:54:16 | WARNING | excel_analyzer | 业务异常 | code=DATA_TYPE_ERR | msg=时间列[日期]无法解析为时间格式：Unknown datetime string format, unable to parse: not_a_date, at position 30
+2026-09-08 22:54:17 | INFO | excel_analyzer | 开始执行任务 | file=D:\2026xiaoxueqi\ai_excel_agent\tests\test_data\sample_test.xlsx | intent=anomaly | sheet=0
+2026-09-08 22:54:17 | INFO | excel_analyzer | 任务执行成功 | intent=anomaly
+2026-09-09 00:04:22 | INFO | excel_analyzer | 开始执行任务 | file=tests\test_data\sample_test.xlsx | intent=sort_filter | sheet=销售数据
+2026-09-09 00:04:22 | INFO | excel_analyzer | 任务执行成功 | intent=sort_filter
