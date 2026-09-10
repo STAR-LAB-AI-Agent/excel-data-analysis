@@ -1,0 +1,26 @@
+# python缓存
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# 日志
+logs/
+
+# 测试输出文件
+*.json
+
+# 环境、密钥
+.env
+*.env
+
+# vscode/pycharm IDE
+.venv/
+venv/
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# 项目运行时生成配置（白名单配置，不提交到仓库）
+config/*.json
