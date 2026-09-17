@@ -20,10 +20,11 @@ anomaly：异常检测，识别重复行、高缺失字段、IQR离群点、**Z-
 
 chart：生成分析图表（可选功能），输出 PNG 文件到 outputs/ 目录
 
-**report：✨一次性完整报告（推荐入口）**。单次调用内依次跑完 overview→stats→sort_filter→trend→anomaly→chart，
-并直接返回一份**可直接作为回复正文的完整 Markdown 报告**（含全部关键数值、anomaly 四要素、chart 的 output_path），
-同时返回 `attachments`（图表路径）与 `delivery_checklist`（交付自查表）。
-**当用户请求涉及 2 个以上意图时，必须优先使用 `report`，禁止再逐意图多次调用。**
+**report：✨一次性报告（推荐入口）**。单次调用内跑完**用户真正请求的那些分段**（默认全部六段，可用 `--intents` 指定子集），
+并直接返回一份**可直接作为回复正文的 Markdown 报告**（含各段关键数值、anomaly 四要素、chart 的 output_path），
+同时返回 `attachments`（图表路径，仅当请求了 chart 段时非空）与 `delivery_checklist`（交付自查表）。
+**当用户请求涉及 2 个以上意图时，必须优先使用 `report`，禁止再逐意图多次调用；
+并且必须用 `--intents` 只声明用户问到的分段——用户没问的分段一律不要跑、不要写进回复（避免冗余交付）。**
 
 ## 2 调用参数定义
 ### 2.1 必选参数
@@ -61,9 +62,10 @@ chart：生成分析图表（可选功能），输出 PNG 文件到 outputs/ 目
 
 | 参数 | 类型 | 说明 |
 |------|------|------|
+| `--intents` | str | **分段子集（范围一致性）**：逗号分隔，取值 `overview` / `stats` / `sort_filter` / `trend` / `anomaly` / `chart`，或 `all`；默认 `all`。只填用户问到的分段，未填的分段**不计算、不渲染、不出图**；含未知名字返回 `INVALID_ARG` |
 | `--format` | str | `json`（默认）/ `md`；`md` 时 stdout 直接输出可交付的 Markdown 正文 |
 | `--chart_type` | str | 报告内图表类型，默认 bar |
-| `--sort_col` / `--sort_asc` | str / flag | 报告内排序段；report 下 `--sort_asc` 缺省为升序 |
+| `--sort_col` / `--sort_asc` | str / flag | 报告内排序段；`--sort_asc` 缺省为**降序**（与 sort_filter 一致，不带该 flag 即按 `--sort_col` 降序） |
 | `--filter_condition` | str | 报告内过滤条件，例：销售额>500 |
 | `--time_col` / `--value_col` | str | 报告内趋势段列名 |
 | `--x_col` / `--y_col` / `--title` | str | 报告内图表列名与标题 |
@@ -105,12 +107,15 @@ chart：生成分析图表（可选功能），输出 PNG 文件到 outputs/ 目
 
 | 字段 | 类型 | 说明 |
 |------|------|------|
-| `markdown` | str | **完整报告正文**，可直接作为回复内容 |
+| `markdown` | str | **报告正文**（只含请求的分段），可直接作为回复内容 |
 | `summary` | str | 一句话总体结论 |
-| `attachments` | list[str] | 图表绝对路径；非空时必须与 `markdown` **同一条消息**发出 |
-| `delivery_checklist` | list[str] | 发送前逐条自查清单 |
-| `sections` | dict | 六个分段的原始结构化结果 |
+| `attachments` | list[str] | 图表绝对路径；**仅当请求了 chart 段时非空**；非空时必须与 `markdown` **同一条消息**发出 |
+| `delivery_checklist` | list[str] | 发送前逐条自查清单；**第一条就是本次范围红线**（请求的分段必须全到、未请求的不得出现） |
+| `sections` | dict | **本次请求的分段**的原始结构化结果（子集请求时只有那几段） |
 | `auto_detected` | dict | 自动探测到的 time_col / value_col / x_col / sort_col |
+| `requested_intents` | list[str] | 本次真正跑的分段（规范顺序） |
+| `excluded_intents` | list[str] | 未请求的分段；正文与附件里都不应出现 |
+| `scope` | str | `full`（全量六段）/ `subset`（分段子集） |
 
 完整错误码表：
 
@@ -120,6 +125,7 @@ chart：生成分析图表（可选功能），输出 PNG 文件到 outputs/ 目
 | `INVALID_SUFFIX` | 文件后缀不是 `.xlsx` / `.xls` |
 | `SHEET_NOT_EXIST` | 指定工作表不存在 |
 | `INVALID_INTENT` | `intent` 不在合法集合 |
+| `INVALID_ARG` | 参数取值非法（当前用于 `--intents` 含未知分段名） |
 | `MISSING_ARG` | 当前意图缺少必填参数 |
 | `DATA_TYPE_ERR` | 数据解析失败（如 `trend` 时间列无法解析为日期） |
 | `INTERNAL_ERROR` | 工具内部未知异常 |
@@ -132,11 +138,14 @@ chart：生成分析图表（可选功能），输出 PNG 文件到 outputs/ 目
 ## 4 调用示例
 前提：运行环境已配置好 PYTHONPATH，指向项目根目录
 
-**示例 0（首选）：一次性完整报告**
+**示例 0（首选）：一次性报告**
 
 ```bash
-# 多意图请求一律用这一条；stdout 就是最终报告正文
+# 多意图请求用这一条；stdout 就是最终报告正文
 python src/excel_analyzer/cli.py --file tests/test_data/sample_test.xlsx --intent report --format md
+
+# 用户只问了一部分（例如只要“统计 + 趋势”）➜ 用 --intents 声明范围，其余分段不计算、不出图、不写进正文
+python src/excel_analyzer/cli.py --file tests/test_data/sample_test.xlsx --intent report --intents stats,trend --format md
 
 # 需要结构化结果（报告+附件路径+自查表）时用 json（默认）
 python src/excel_analyzer/cli.py --file tests/test_data/sample_test.xlsx --intent report --output_json result.json
@@ -225,8 +234,11 @@ trend 参数校验前置到文件 IO 读取之前，参数错误直接返回，�
 
 `chart` 输出为 PNG 文件，只返回文件路径和大小，不返回 base64 图像数据。
 
-`report` 把六段拼装下沉到工具内部，并且 `chart` 段额外给出**分组数值表**（均值/合计/记录数），
+`report` 把分段拼装下沉到工具内部，并且 `chart` 段额外给出**分组数值表**（均值/合计/记录数），
 使报告不依赖看图即可得出区域对比结论，同时避免智能体多轮调用与大段重复上下文。
+
+`report --intents a,b` 只算用户问到的那几段：不做无用计算（未请求 chart 就不出图、未请求 trend 就不做时间清洗），
+也不把没用到的分段塞回上下文，双向省 token。
 
 ## 8 独立测试方式
 在项目根目录执行单元测试，验证工具本身功能正确性：
@@ -243,9 +255,10 @@ python -m unittest tests.test_encoding -v
 python -m unittest tests.test_doc_consistency -v
 ```
 
-其中 `tests.test_report`（12 个用例）专门锁定「一次性完整交付」契约：
-六段齐全、anomaly 四要素、chart 带 output_path 与分组数值、attachments 非空、
-delivery_checklist 含「同一条消息」要求、`--format md` 输出纯 Markdown。
+其中 `tests.test_report`（18 个用例）专门锁定「一次性交付」契约：
+全量时六段齐全、anomaly 四要素、chart 带 output_path 与分组数值、attachments 非空、
+delivery_checklist 含「同一条消息」要求、`--format md` 输出纯 Markdown；
+子集时（`--intents`）**只含请求的分段**、未请求 chart 不出图、范围写进自查表、未知分段名报 `INVALID_ARG`。
 
 `tests.test_encoding`（5 个用例）锁定「stdout 恒为 UTF-8」的编码契约（见第 5 章）。
 
@@ -258,7 +271,8 @@ README 目录结构与实际文件树一致；文档列出的 CLI 参数必须�
 
 ### 9.1 首选：`intent=report` 一次性交付
 
-> ⚠️ **多意图请求一律走 `report`，不要逐意图多次调用，也不要自己拼装报告。**
+> ⚠️ **多意图请求一律走 `report`，不要逐意图多次调用，也不要自己拼报告；
+> 并且必须用 `--intents` 把范围限定在用户问到的分段上。**
 
 ```bash
 python src/excel_analyzer/cli.py --file <xlsx> --intent report --format md
@@ -275,20 +289,34 @@ python src/excel_analyzer/cli.py --file <xlsx> --intent report --format md
 - `--format json`（默认）：`result.markdown` 为报告正文，`result.attachments` 为图表路径，
   `result.delivery_checklist` 为发送前自查表。
 - 走 `report` 时，**不需要**再单独调用 chart 意图，也**不需要**再单独调 message 发图。
+- **只问了一部分必须用子集**：用户只问 2 件事时不要跑六段，显式声明范围：
 
-### 9.2 交付硬性契约（四道红线）
+  ```bash
+  python src/excel_analyzer/cli.py --file <xlsx> --intent report --intents stats,trend --format md
+  ```
 
-1. **正文与附件必须同在一条消息里**。把 `result.markdown` 全文写进 `message` 的 `content`，
+  未列出的分段不会计算、不会渲染、不会出图；正文首部的「本次范围」行与 `result.excluded_intents` 可用来复核范围。
+  只请求 1 段且不需要附图时，直接调该意图（见 9.4）；若那一段也要图 + 自查表，则用 `--intents <该段>`。
+
+### 9.2 交付硬性契约（五道红线）
+
+1. **范围必须等于用户请求的范围（不漏答，也不多答）**。`--intents` 里写了哪几段，回复里就必须有哪几段；
+   **未请求的分段一律不得出现**——不要“为了报告更完整”把其它意图再跑一遍塞进去，也不要凭猜测补充分析或图表。
+   ❌ 冗余反例：用户只问「销售额趋势 + 异常值」，回复却把概览/统计/筛选/图表全倒出来。
+2. **正文与附件必须同在一条消息里**。把 `result.markdown` 全文写进 `message` 的 `content`，
    把 `result.attachments` 里的图片放进同一次调用的 `media`。
    ❌ 禁止把附件单独发成一条只含图片的气泡；❌ 禁止把正文与附件拆成两条消息。
-2. **不得只发图表**。图只是附件，正文必须把六个分段的关键数值写全。
-3. **不得输出过程旁白**。禁止出现「正在分析…」「概览正常，现在…」「异常检测完成。现在生成柱状图：」这类句子；
+   （未请求 chart 段时 `attachments` 为空，回复就是纯文本正文，不要自行补图。）
+3. **不得只发图表**。图只是附件，正文必须把本次各段的关键数值写全。
+4. **不得输出过程旁白**。禁止出现「正在分析…」「概览正常，现在…」「异常检测完成。现在生成柱状图：」这类句子；
    等报告生成后一次性作答。
-4. **发出前对照 `delivery_checklist` 逐条自查**（六段是否齐全 / 同一条消息 / anomaly 四要素 / chart 数值）。
+5. **发出前对照 `delivery_checklist` 逐条自查**（本次各段是否齐全 / 未请求的分段是否真的没出现 /
+   同一条消息 / anomaly 四要素 / chart 数值）。
 
 ### 9.3 分段内容要求（`report` 已自动满足）
 
-1. **每个意图单独列出**，用二级标题区分：`## overview` / `## stats` / `## sort_filter` / `## trend` / `## anomaly` / `## chart`
+0. **只写请求的分段**：正文里出现哪些二级标题完全由 `--intents` 决定，未请求的分段既不算也不写。
+1. **每个请求的意图单独列出**，用二级标题区分：`## overview` / `## stats` / `## sort_filter` / `## trend` / `## anomaly` / `## chart`
 2. **必须展示关键数值**，不能只说“完成”
 3. **异常检测（anomaly）必须展示**：
    - 重复行数
@@ -315,6 +343,8 @@ python src/excel_analyzer/cli.py --file <xlsx> --intent report --format md
 
 只涉及 1 个意图（例如只要 `anomaly`）时，可单独调用该意图；
 **但若要附图，必须把该段文字结论与图片放入同一条消息**。
+单意图但需要“正文 + 图 + 自查表”一条龙时，也可用 `report --intents <该意图>`（例如 `--intents chart`）：
+区别只是前者返回单段结构化结果、后者返回带交付清单的报告。
 
-测试用例共 **46 个**（test_basic 11 + test_advanced 12 + test_report 12 + test_encoding 5 + test_doc_consistency 6），
-覆盖异常输入、边界脏数据、正常业务通路、图表可选功能、数据清洗、算法增强、一次性完整交付契约、输出编码契约、文档一致性契约。
+测试用例共 **52 个**（test_basic 11 + test_advanced 12 + test_report 18 + test_encoding 5 + test_doc_consistency 6），
+覆盖异常输入、边界脏数据、正常业务通路、图表可选功能、数据清洗、算法增强、一次性交付与分段子集契约、输出编码契约、文档一致性契约。

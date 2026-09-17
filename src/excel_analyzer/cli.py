@@ -24,11 +24,14 @@ from src.excel_analyzer.schemas import (
     VALID_CHART_TYPES,
     VALID_REPORT_FORMATS,
     ALLOWED_EXCEL_SUFFIX,
+    REPORT_SECTION_ORDER,
+    parse_report_sections,
     build_response,
     ERR_INTERNAL_ERROR,
     ERR_NEED_USER_CONFIRM,
     ERR_FILE_NOT_FOUND,
     ERR_INVALID_SUFFIX,
+    ERR_INVALID_ARG,
     INTENT_SORT_FILTER,
     INTENT_TREND,
     INTENT_CHART,
@@ -109,8 +112,13 @@ def main():
     # sort_filter 参数
     parser.add_argument("--sort_col", type=str, default=None, help="sort_filter：排序列名")
     parser.add_argument("--sort_asc", action="store_true", default=None,
-                        help="sort_filter：升序，默认降序（report：默认升序）")
+                        help="升序，默认降序（sort_filter 与 report 一致）")
     parser.add_argument("--filter_condition", type=str, default=None, help="sort_filter：过滤条件，例：销售额>1000")
+
+    # report 分段子集
+    parser.add_argument("--intents", type=str, default=None,
+                        help="report：只跑指定的分段子集，逗号分隔，可选 "
+                             f"{','.join(REPORT_SECTION_ORDER)} 或 all；默认 all（全部六段）")
 
     # trend 参数
     parser.add_argument("--time_col", type=str, default=None, help="trend：时间列名称")
@@ -152,6 +160,7 @@ def main():
         "file_path": args.file,
         "sheet_name": args.sheet,
         "intent": args.intent,
+        "intents": args.intents,
     }
 
     # ========== 第 1 层：参数完整性 ==========
@@ -190,6 +199,18 @@ def main():
         )
 
     # ========== 第 5 层：意图专属参数 ==========
+    report_sections = None
+    if intent == INTENT_REPORT:
+        # --intents 只对 report 有意义；非法分段名直接报错，避免静默丢掉用户问过的分段
+        report_sections, unknown_sections = parse_report_sections(args.intents)
+        if unknown_sections:
+            _output_and_exit(
+                build_response(False, error_code=ERR_INVALID_ARG,
+                               error_msg=f"--intents 含未知分段 {unknown_sections}，"
+                                         f"可选 {','.join(REPORT_SECTION_ORDER)} 或 all",
+                               meta=meta),
+                args.output_json
+            )
     if intent == INTENT_TREND:
         if args.time_col is None or args.value_col is None:
             _output_and_exit(
@@ -279,7 +300,7 @@ def main():
                 title=args.title,
             )
         elif intent == INTENT_REPORT:
-            # ✨ 一次性完整报告：单次调用产出六个分段的完整交付物
+            # ✨ 一次性报告：单次调用产出所请求分段的完整交付物（默认全部六段）
             result = build_report(
                 df,
                 file_path=args.file,
@@ -290,13 +311,17 @@ def main():
                 x_col=args.x_col,
                 y_col=args.y_col,
                 sort_col=args.sort_col,
-                sort_asc=(True if args.sort_asc is None else bool(args.sort_asc)),
+                sort_asc=bool(args.sort_asc),
                 filter_condition=args.filter_condition,
                 title=args.title,
+                intents=report_sections,
             )
             resp = build_response(success=True, meta=meta, result=result)
             logger.info(
-                f"任务执行成功 | intent={intent} | sections={list(result['sections'].keys())} "
+                f"任务执行成功 | intent={intent} "
+                f"| requested={result['requested_intents']} "
+                f"| excluded={result['excluded_intents']} "
+                f"| sections={list(result['sections'].keys())} "
                 f"| attachments={result['attachments']}"
             )
             if args.format == "md":

@@ -13,15 +13,28 @@ report_builder.py
 「只发了一张图、其余问题完全没有回复」的交付失败。
 
 修复思路：把「拼装」从智能体下沉到工具内部。
-    - 一次调用 → 一份完整报告（六个分段全在，关键数值全在）
+    - 一次调用 → 一份报告（请求的分段全在，关键数值全在）
     - 报告里同时携带 attachments 与 delivery_checklist
     - 智能体的正确动作被压缩成：跑一条命令 → 把 markdown 全文 + 图片放进同一条消息
 
 这样「正确输出」不再依赖智能体的多步记忆，而是成为工具输出的自然结果。
+
+--------------------------------------------------------------------------
+范围一致性（第二阶段修复）
+--------------------------------------------------------------------------
+「一次跑完六段」解决了漏答，却会引出另一面：用户只问其中 2 件事时，
+把 6 段全倒出去就是**冗余交付**（答非所问、占用注意力、还可能让读者
+以为未问的结论也是被要过的）。
+
+因此 report 支持分段子集：
+    --intent report --intents stats,trend
+只跑、只渲染请求的分段；未请求的分段**不计算、不渲染、不出图**，
+并在 delivery_checklist 第一条与 result.excluded_intents 中显式声明范围，
+让「既不漏段、也不多答」成为工具可验证的输出属性。
 """
 import math
 import warnings
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Optional, Tuple, Union
 
 import pandas as pd
 
@@ -33,7 +46,8 @@ from src.excel_analyzer.analyzer_core import (
     do_anomaly,
     do_chart,
 )
-from src.excel_analyzer.exceptions import BaseBusinessError
+from src.excel_analyzer.exceptions import BaseBusinessError, InvalidIntentError
+from src.excel_analyzer.schemas import REPORT_SECTION_ORDER, parse_report_sections
 
 # 列名提示词：用于在没有显式指定列时做自动探测
 _VALUE_HINTS = ("销售额", "销售", "金额", "营收", "收入", "利润", "amount", "sales", "revenue", "value")
@@ -151,6 +165,80 @@ def auto_detect_columns(df: pd.DataFrame) -> Dict[str, Optional[str]]:
     }
 
 
+# ============================ 分段子集（范围一致性） ============================
+# 需要列自动探测的分段：其余分段（overview/stats）不依赖列名，无需扫描
+_DETECT_NEEDED = {"sort_filter", "trend", "anomaly", "chart"}
+
+
+def normalize_intents(intents: Union[str, List[str], None]) -> List[str]:
+    """把外部传入的分段子集规范化为有序列表。
+
+    None / "" / "all" → 全部六段（向后兼容旧调用）；
+    "stats,trend" / ["trend", "stats", "stats"] → ["stats", "trend"]（去重 + 固定顺序）；
+    含未知分段名时直接抛 InvalidIntentError —— 宁可报错，也不要静默丢掉用户请求过的分段。
+    """
+    sections, unknown = parse_report_sections(intents)
+    if unknown:
+        raise InvalidIntentError(
+            f"report 不支持的子集分段：{'、'.join(unknown)}；"
+            f"可选 {'/'.join(REPORT_SECTION_ORDER)} 之一或多个，或用 all 表示全部"
+        )
+    return sections
+
+
+_SECTION_REQUIREMENTS = {
+    "overview": "overview 段必须给出：行列数、字段清单与类型、缺失率最高的列及占比。",
+    "stats": "stats 段必须给出：每个数值列的均值/中位数/标准差/变异系数/偏度。",
+    "sort_filter": "sort_filter 段必须给出：排序方向、命中行数、前 10 条样本。",
+    "trend": "trend 段必须给出：时间列与指标列、首末值与变化率、回归斜率、剔除离群点后的真实走势。",
+    "anomaly": "anomaly 段必须给出：重复行数、高缺失列及缺失率、每列 IQR 与 Z-Score 离群数（缺一不可）。",
+    "chart": "chart 段必须给出：output_path 与分组数值，不能只有图片。",
+}
+
+
+def build_delivery_checklist(requested: List[str]) -> List[str]:
+    """生成发送前自查表。
+
+    第一条永远是**范围红线**：请求的分段必须全到（防漏答），未请求的分段一律不得出现（防冗余）。
+    历史故障的两个方向都要挡住：
+      · 只发了一张图、其余问题没回答；
+      · 用户只问 2 件事、却把 6 段全倒出去。
+    """
+    excl = [s for s in REPORT_SECTION_ORDER if s not in requested]
+    items: List[str] = []
+
+    if excl:
+        items.append(
+            f"本次报告范围＝用户请求的 {len(requested)} 个分段：{'、'.join(requested)}；"
+            f"必须逐段写全、禁止漏段或只写一句「已完成」；"
+            f"**未请求的 {'、'.join(excl)} 一律不得出现在回复里** —— "
+            f"不要为了「报告更完整」而重复跑其他意图，也不要凭猜测补充分析或图表。"
+        )
+    else:
+        items.append(
+            "本次报告为全量范围：overview / stats / sort_filter / trend / anomaly / chart "
+            "六段都已包含，缺一不可，禁止只发送图表。"
+        )
+
+    if "chart" in requested:
+        items.append(
+            "必须把 markdown 全文与 attachments 里的图片放在**同一条消息**中发出："
+            "禁止把附件单独发成一条只含图片的气泡，禁止拆成两条消息。"
+        )
+        items.append("禁止只发送图表：图只是附件，正文必须把上述分段的关键数值写全。")
+    else:
+        items.append(
+            "本次未请求 chart 段，工具不会产出任何图片（attachments 为空属正常）："
+            "回复应为**纯文本正文**，禁止自行生成或附加图片，也禁止把正文拆成两条消息。"
+        )
+        items.append("禁止只发送图表：本次没有图表，若回复里只有图片或只有「已完成」视为交付失败。")
+
+    for name in requested:
+        items.append(_SECTION_REQUIREMENTS[name])
+    items.append("不要输出「正在分析」「下一步…」这类过程旁白，等本报告生成后一次性作答。")
+    return items
+
+
 # ============================ 报告主体 ============================
 def build_report(
     df: pd.DataFrame,
@@ -167,21 +255,30 @@ def build_report(
     filter_condition: Optional[str] = None,
     title: Optional[str] = None,
     auto_detect: bool = True,
+    intents: Union[str, List[str], None] = None,
 ) -> Dict[str, Any]:
     """
-    一次调用生成完整报告。
+    一次调用生成报告，**只跑请求的分段**。
+
+    intents：要跑的分段子集（None = 全部六段，向后兼容）；
+             用户一次只问 2 件事时就传那 2 个，未请求的分段不计算、不渲染、不出图。
 
     返回：
         {
-          "markdown":     完整 Markdown 报告（可直接作为回复正文）
+          "markdown":     报告正文（可直接作为回复正文，只含请求的分段）
           "summary":      一句话总体结论
-          "attachments":  [图表绝对路径, ...]
-          "delivery_checklist": [...],   # 发送前必须逐条自检
-          "sections":     {intent: 原始结构化结果 / 错误信息}
-          "auto_detected": {time_col, value_col, x_col}
+          "attachments":  [图表绝对路径, ...]（仅当请求了 chart 段时非空）
+          "delivery_checklist": [...],   # 发送前必须逐条自检（第一条是范围红线）
+          "sections":     {分段: 原始结构化结果 / 错误信息}（只含请求的分段）
+          "auto_detected": {time_col, value_col, x_col, sort_col}
+          "requested_intents": [...],    # 本次真正跑的分段（规范顺序）
+          "excluded_intents":  [...],    # 未请求的分段：正文与附件中都不应出现
+          "scope":        "full" | "subset"
         }
     """
-    detected = auto_detect_columns(df) if auto_detect else {}
+    req = normalize_intents(intents)
+    excl = [s for s in REPORT_SECTION_ORDER if s not in req]
+    detected = auto_detect_columns(df) if (auto_detect and set(req) & _DETECT_NEEDED) else {}
     time_col = time_col or detected.get("time_col")
     value_col = value_col or detected.get("value_col")
     x_col = x_col or detected.get("x_col")
@@ -208,44 +305,45 @@ def build_report(
         warnings.append(f"{intent_name} 段执行失败：{msg}")
         return {"__error__": msg}
 
-    # ---- 1 overview ----
-    sections["overview"] = _safe("overview", lambda: do_overview(df))
+    # ---- 只跑本次请求的分段（未请求的分段不计算）----
+    if "overview" in req:
+        sections["overview"] = _safe("overview", lambda: do_overview(df))
 
-    # ---- 2 stats ----
-    sections["stats"] = _safe("stats", lambda: do_stats(df))
+    if "stats" in req:
+        sections["stats"] = _safe("stats", lambda: do_stats(df))
 
-    # ---- 3 sort_filter ----
-    sections["sort_filter"] = _safe(
-        "sort_filter",
-        lambda: do_sort_filter(
-            df, sort_col=sort_col, sort_asc=sort_asc, filter_condition=filter_condition
-        ),
-    )
-
-    # ---- 4 trend ----
-    if time_col and value_col:
-        sections["trend"] = _safe(
-            "trend",
-            lambda: do_trend(df, time_col=time_col, value_col=value_col, auto_clean=True),
+    if "sort_filter" in req:
+        sections["sort_filter"] = _safe(
+            "sort_filter",
+            lambda: do_sort_filter(
+                df, sort_col=sort_col, sort_asc=sort_asc, filter_condition=filter_condition
+            ),
         )
-    else:
-        sections["trend"] = _skip("trend", "未能识别时间列或数值列，已跳过趋势分析")
 
-    # ---- 5 anomaly ----
-    sections["anomaly"] = _safe("anomaly", lambda: do_anomaly(df))
+    if "trend" in req:
+        if time_col and value_col:
+            sections["trend"] = _safe(
+                "trend",
+                lambda: do_trend(df, time_col=time_col, value_col=value_col, auto_clean=True),
+            )
+        else:
+            sections["trend"] = _skip("trend", "未能识别时间列或数值列，已跳过趋势分析")
 
-    # ---- 6 chart ----
-    if x_col and y_col and chart_type in ("bar", "line"):
-        chart_title = title or f"各{x_col}{value_col}"
-        sections["chart"] = _safe(
-            "chart",
-            lambda: do_chart(df, chart_type=chart_type, x_col=x_col, y_col=y_col, title=chart_title),
-        )
-    else:
-        sections["chart"] = _safe(
-            "chart",
-            lambda: do_chart(df, chart_type=chart_type, x_col=None, y_col=y_col, title=title),
-        )
+    if "anomaly" in req:
+        sections["anomaly"] = _safe("anomaly", lambda: do_anomaly(df))
+
+    if "chart" in req:
+        if x_col and y_col and chart_type in ("bar", "line"):
+            chart_title = title or f"各{x_col}{value_col}"
+            sections["chart"] = _safe(
+                "chart",
+                lambda: do_chart(df, chart_type=chart_type, x_col=x_col, y_col=y_col, title=chart_title),
+            )
+        else:
+            sections["chart"] = _safe(
+                "chart",
+                lambda: do_chart(df, chart_type=chart_type, x_col=None, y_col=y_col, title=title),
+            )
 
     chart_res = sections.get("chart") or {}
     if isinstance(chart_res, dict) and chart_res.get("output_path"):
@@ -258,25 +356,15 @@ def build_report(
         df=df,
         time_col=time_col,
         value_col=value_col,
-        x_col=x_col,
-        chart_type=chart_type,
         warnings=warnings,
+        intents=req,
     )
-
-    checklist = [
-        "本体报告为完整版：overview / stats / sort_filter / trend / anomaly / chart 六段都已包含，"
-        "禁止只发送图表而不给正文。",
-        "必须把 markdown 全文与 attachments 里的图片放在**同一条消息**中发出，不要拆成两条气泡。",
-        "anomaly 段必须出现：重复行数、高缺失列及缺失率、每列 IQR 与 Z-Score 离群数（缺一不可）。",
-        "chart 段必须出现 output_path 与分组数值，不能只有图片。",
-        "不要输出「正在分析」「下一步…」这类过程旁白，等本报告生成后一次性作答。",
-    ]
 
     return {
         "markdown": markdown,
         "summary": _build_summary(sections, value_col),
         "attachments": attachments,
-        "delivery_checklist": checklist,
+        "delivery_checklist": build_delivery_checklist(req),
         "sections": sections,
         "auto_detected": {
             "time_col": time_col,
@@ -284,6 +372,9 @@ def build_report(
             "x_col": x_col,
             "sort_col": sort_col,
         },
+        "requested_intents": req,
+        "excluded_intents": excl,
+        "scope": "full" if not excl else "subset",
         "warnings": warnings,
     }
 
@@ -316,6 +407,7 @@ def _build_summary(sections: Dict[str, Any], value_col: Optional[str], adj: Opti
 
 
 # ============================ Markdown 渲染 ============================
+
 def render_markdown(
     sections: Dict[str, Any],
     *,
@@ -324,26 +416,64 @@ def render_markdown(
     df: Optional[pd.DataFrame] = None,
     time_col: Optional[str] = None,
     value_col: Optional[str] = None,
-    x_col: Optional[str] = None,
-    chart_type: str = "bar",
     warnings: Optional[List[str]] = None,
+    intents: Optional[Union[str, List[str]]] = None,
 ) -> str:
-    """按固定契约渲染六个分段，每段都带关键数值 + 一句文字结论"""
-    # 先算一次「剔除离群点后的趋势」，供 trend 段与综合结论共用
-    adj_trend = _outlier_adjusted_trend(df, time_col, value_col)
+    """按固定契约渲染**本次请求的分段**，每段都带关键数值 + 一句文字结论。
+
+    intents：本次要渲染的分段，缺省 None = 全部六段（向后兼容）。
+    未请求的分段**不计算、不渲染、不附加图片**，避免出现
+    「用户只问 2 件事、报告却把 6 段全倒出去」的冗余交付。
+    """
+    req = normalize_intents(intents)
+    full = len(req) == len(REPORT_SECTION_ORDER)
+    excl = [s for s in REPORT_SECTION_ORDER if s not in req]
+    # 先算一次「剔除离群点后的趋势」，供 trend 段与综合结论共用（未请求 trend 时不计算）
+    adj_trend = _outlier_adjusted_trend(df, time_col, value_col) if "trend" in req else None
     lines: List[str] = []
 
     fname = file_path.split("/")[-1].split("\\")[-1] if file_path else "数据表"
-    lines.append(f"# {fname} · 完整分析报告")
+    lines.append(f"# {fname} · {'完整分析报告' if full else '分析报告'}")
     lines.append("")
     lines.append(f"- **数据源**：`{file_path}`")
     lines.append(f"- **工作表**：{sheet_name or '0'}")
     if df is not None:
         lines.append(f"- **规模**：{len(df)} 行 × {len(df.columns)} 列")
-    lines.append(f"- **生成方式**：`--intent report` 一次性生成（六个分段全部包含）")
+    scope_note = f"共 {len(req)} 段：{'、'.join(req)}"
+    if excl:
+        scope_note += f"；未请求 {'、'.join(excl)}"
+    lines.append(f"- **生成方式**：`--intent report` 一次性生成（本次范围 {scope_note}）")
     lines.append("")
 
-    # ---------- overview ----------
+    # ---- 只渲染本次请求的分段，顺序固定为 REPORT_SECTION_ORDER ----
+    renderers = {
+        "overview": _sec_overview,
+        "stats": _sec_stats,
+        "sort_filter": _sec_sort_filter,
+        "trend": _sec_trend,
+        "anomaly": _sec_anomaly,
+        "chart": _sec_chart,
+    }
+    for name in req:
+        renderers[name](sections, lines, df=df, value_col=value_col, adj_trend=adj_trend)
+
+    # ---------- 综合结论 ----------
+    lines.append("## 综合结论")
+    lines.append("")
+    lines.append(f"- {_build_summary(sections, value_col, adj_trend)}")
+    if warnings:
+        lines.append("- 生成过程中的提示：")
+        for w in warnings:
+            lines.append(f"  - {w}")
+    lines.append("")
+
+    return "\n".join(lines).rstrip() + "\n"
+
+
+def _sec_overview(sections: Dict[str, Any], lines: List[str], *,
+            df: Optional[pd.DataFrame] = None, value_col: Optional[str] = None,
+            adj_trend: Optional[Dict[str, Any]] = None) -> List[str]:
+    """overview 段：数据概览（行列数 / 字段类型 / 缺失 / 样本 + 文字结论）"""
     lines.append("## overview · 数据概览")
     lines.append("")
     ov = sections.get("overview") or {}
@@ -383,7 +513,13 @@ def render_markdown(
             lines.append("**结论**：表结构完整，无任何缺失值。")
     lines.append("")
 
-    # ---------- stats ----------
+    return lines
+
+
+def _sec_stats(sections: Dict[str, Any], lines: List[str], *,
+            df: Optional[pd.DataFrame] = None, value_col: Optional[str] = None,
+            adj_trend: Optional[Dict[str, Any]] = None) -> List[str]:
+    """stats 段：数值列描述性统计（均值/中位数/标准差/变异系数/偏度 + 文字结论）"""
     lines.append("## stats · 描述性统计")
     lines.append("")
     st = sections.get("stats") or {}
@@ -408,7 +544,13 @@ def render_markdown(
                              f"偏度 {_fmt(skew, 4)}、变异系数 {_fmt(cv, 4)} —— {tail}。")
     lines.append("")
 
-    # ---------- sort_filter ----------
+    return lines
+
+
+def _sec_sort_filter(sections: Dict[str, Any], lines: List[str], *,
+            df: Optional[pd.DataFrame] = None, value_col: Optional[str] = None,
+            adj_trend: Optional[Dict[str, Any]] = None) -> List[str]:
+    """sort_filter 段：排序与过滤（排序方向 / 命中行数 / 头部样本 + 文字结论）"""
     lines.append("## sort_filter · 排序筛选")
     lines.append("")
     sf = sections.get("sort_filter") or {}
@@ -439,7 +581,13 @@ def render_markdown(
                      f"{sort_desc}。（工具仅返回前 10 条以控制输出体积）")
     lines.append("")
 
-    # ---------- trend ----------
+    return lines
+
+
+def _sec_trend(sections: Dict[str, Any], lines: List[str], *,
+            df: Optional[pd.DataFrame] = None, value_col: Optional[str] = None,
+            adj_trend: Optional[Dict[str, Any]] = None) -> List[str]:
+    """trend 段：时间趋势（首末值 / 变化率 / 回归斜率 / 剔除离群点后的真实走势）"""
     lines.append("## trend · 时间趋势")
     lines.append("")
     tr = sections.get("trend") or {}
@@ -479,7 +627,13 @@ def render_markdown(
             lines.append(f"**结论**：{tr.get('hint', '有效数据不足，无法给出趋势结论')}。")
     lines.append("")
 
-    # ---------- anomaly ----------
+    return lines
+
+
+def _sec_anomaly(sections: Dict[str, Any], lines: List[str], *,
+            df: Optional[pd.DataFrame] = None, value_col: Optional[str] = None,
+            adj_trend: Optional[Dict[str, Any]] = None) -> List[str]:
+    """anomaly 段：异常检测（重复行 / 高缺失列 / IQR 与 Z-Score 离群数 + 文字结论）"""
     lines.append("## anomaly · 异常检测")
     lines.append("")
     an = sections.get("anomaly") or {}
@@ -515,7 +669,13 @@ def render_markdown(
             lines.append("**结论**：无数值列可做离群检测。")
     lines.append("")
 
-    # ---------- chart ----------
+    return lines
+
+
+def _sec_chart(sections: Dict[str, Any], lines: List[str], *,
+            df: Optional[pd.DataFrame] = None, value_col: Optional[str] = None,
+            adj_trend: Optional[Dict[str, Any]] = None) -> List[str]:
+    """chart 段：图表（output_path + 分组数值表，保证不依赖看图也能读数）"""
     lines.append("## chart · 图表")
     lines.append("")
     ch = sections.get("chart") or {}
@@ -536,22 +696,15 @@ def render_markdown(
             top = grouped["rows"][0]
             bot = grouped["rows"][-1]
             ratio = (top[1] / bot[1]) if bot[1] else None
+            # 仅当本次报告确实包含 anomaly 段时才给出交叉引用，避免子集报告提到未请求的分段
+            hint = (" 若个别分组明显偏高，需检查是否由离群记录拉高（见 anomaly 段）。"
+                    if "anomaly" in sections else "")
             lines.append(f"**结论**：`{top[0]}` 均值最高（{_fmt(top[1])}），`{bot[0]}` 最低（{_fmt(bot[1])}）"
                          + (f"，高低相差约 {_fmt(ratio, 1)} 倍。" if ratio else "。")
-                         + " 若个别分组明显偏高，需检查是否由离群记录拉高（见 anomaly 段）。")
+                         + hint)
     lines.append("")
 
-    # ---------- 综合结论 ----------
-    lines.append("## 综合结论")
-    lines.append("")
-    lines.append(f"- {_build_summary(sections, value_col, adj_trend)}")
-    if warnings:
-        lines.append("- 生成过程中的提示：")
-        for w in warnings:
-            lines.append(f"  - {w}")
-    lines.append("")
-
-    return "\n".join(lines).rstrip() + "\n"
+    return lines
 
 
 def _outlier_adjusted_trend(df: Optional[pd.DataFrame], time_col: Optional[str], value_col: Optional[str]) -> Optional[Dict[str, Any]]:

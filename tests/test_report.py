@@ -30,6 +30,9 @@ REQUIRED_SECTIONS = [
     "## chart",
 ]
 
+# 分段子集（--intents）专项：未请求的分段不得出现在正文里
+ALL_SECTIONS = ("overview", "stats", "sort_filter", "trend", "anomaly", "chart")
+
 # anomaly 段强制四要素
 ANOMALY_REQUIRED = ["重复行数", "高缺失列", "IQR 离群数", "Z-Score 离群数"]
 
@@ -138,6 +141,87 @@ class TestReportOneShot(unittest.TestCase):
     def test_R10_trend_flags_outlier_driven_change(self):
         """趋势段必须点明「表面暴跌其实由离群点驱动」"""
         self.assertIn("剔除离群点后真实走势", self.md)
+
+
+class TestReportSubsetScope(unittest.TestCase):
+    """report 分段子集（--intents）：用户只问其中几件事时不得把六段全倒出去
+
+    锁定「冗余交付」回归：全量报告解决了漏答，但用户只请求 2 个意图时，
+    若仍跑满六段，就是答非所问。因此要求：
+        · 只计算、只渲染、只出图请求的分段；
+        · 范围写进 markdown 与 delivery_checklist；
+        · 未知分段名报错，不静默丢弃。
+    """
+
+    def test_R13_subset_runs_only_requested_sections(self):
+        """--intents stats,trend：正文与 sections 只含这 2 段，其余不得出现"""
+        resp = run_cli(["--file", SAMPLE, "--intent", "report", "--intents", "stats,trend"])
+        self.assertTrue(resp["success"], msg=str(resp)[:500])
+        res = resp["result"]
+        md = res["markdown"]
+        self.assertEqual(res["requested_intents"], ["stats", "trend"])
+        self.assertEqual(res["scope"], "subset")
+        self.assertEqual(sorted(res["sections"].keys()), ["stats", "trend"])
+        self.assertIn("## stats", md)
+        self.assertIn("## trend", md)
+        for absent in ("## overview", "## sort_filter", "## anomaly", "## chart"):
+            with self.subTest(absent=absent):
+                self.assertNotIn(absent, md, msg=f"未请求的 {absent} 出现在正文里（冗余交付）")
+        self.assertEqual(res["excluded_intents"],
+                         ["overview", "sort_filter", "anomaly", "chart"])
+
+    def test_R14_subset_without_chart_produces_no_attachment(self):
+        """未请求 chart 段时不生成图片，且自查表必须声清「不会出图」"""
+        resp = run_cli(["--file", SAMPLE, "--intent", "report", "--intents", "anomaly"])
+        self.assertTrue(resp["success"], msg=str(resp)[:500])
+        res = resp["result"]
+        self.assertEqual(res["requested_intents"], ["anomaly"])
+        self.assertEqual(res["attachments"], [])
+        self.assertIn("## anomaly", res["markdown"])
+        checklist = "\n".join(res["delivery_checklist"])
+        self.assertIn("未请求 chart", checklist)
+        self.assertIn("不得出现", checklist)
+
+    def test_R15_subset_chart_keeps_output_path_and_numbers(self):
+        """只请求 chart 时仍必须给 output_path 与分组数值，且不带其他分段"""
+        resp = run_cli(["--file", SAMPLE, "--intent", "report", "--intents", "chart"])
+        self.assertTrue(resp["success"], msg=str(resp)[:500])
+        res = resp["result"]
+        self.assertEqual(len(res["attachments"]), 1)
+        self.assertTrue(os.path.exists(res["attachments"][0]))
+        self.assertIn("## chart", res["markdown"])
+        self.assertIn("output_path", res["markdown"])
+        self.assertIn("分组数值", res["markdown"])
+        self.assertNotIn("## overview", res["markdown"])
+
+    def test_R16_intents_order_and_dup_normalized(self):
+        """子集书写顺序无关、可重复，输出恒为规范顺序（stats 在 chart 之前）"""
+        resp = run_cli(["--file", SAMPLE, "--intent", "report", "--intents", "chart,stats,stats"])
+        self.assertTrue(resp["success"], msg=str(resp)[:500])
+        res = resp["result"]
+        self.assertEqual(res["requested_intents"], ["stats", "chart"])
+        md = res["markdown"]
+        self.assertLess(md.index("## stats"), md.index("## chart"))
+
+    def test_R17_full_scope_default_and_all(self):
+        """默认不传 --intents 与 --intents all 都等于全量六段（向后兼容）"""
+        for extra in ([], ["--intents", "all"]):
+            with self.subTest(extra=extra):
+                resp = run_cli(["--file", SAMPLE, "--intent", "report"] + extra)
+                self.assertTrue(resp["success"], msg=str(resp)[:500])
+                res = resp["result"]
+                self.assertEqual(len(res["sections"]), 6)
+                self.assertEqual(res["excluded_intents"], [])
+                self.assertEqual(res["scope"], "full")
+                for header in REQUIRED_SECTIONS:
+                    self.assertIn(header, res["markdown"])
+
+    def test_R18_unknown_section_rejected(self):
+        """未知分段名必须报错（INVALID_ARG），不得静默丢掉用户问过的分段"""
+        resp = run_cli(["--file", SAMPLE, "--intent", "report", "--intents", "overview,foo"])
+        self.assertFalse(resp["success"])
+        self.assertEqual(resp["error_code"], "INVALID_ARG")
+        self.assertIn("foo", resp["error_msg"])
 
 
 class TestReportMarkdownFormat(unittest.TestCase):

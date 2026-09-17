@@ -13,7 +13,7 @@
 - 工具仅执行文件读取，**不会修改原始 Excel 文件**
 - 智能体调用能力说明文档：`docs/SKILL.md`
 - 支持 7 种分析意图：overview / stats / sort_filter / trend / anomaly / chart / **report**
-- `report` 为**推荐入口**：单次调用跑完六个分段，直接返回可交付的 Markdown 报告 + 图表路径 + 交付自查表
+- `report` 为**推荐入口**：单次调用跑完**用户请求的那些分段**（`--intents` 指定子集，默认全部六段），直接返回可交付的 Markdown 报告 + 图表路径 + 交付自查表
 - `report` 内置**离群点校验**：自动识别“表面暴跌/暴涨其实由离群点驱动”的伪趋势
 
 ---
@@ -28,8 +28,10 @@
 4. **时序趋势分析**：用户有时间列和数值列，想了解指标随时间的变化趋势（上升/下降/平稳）。
 5. **异常检测**：用户需要识别表格中的重复行、缺失率过高的列、以及数值列中的离群点。
 6. **图表生成（可选功能）**：用户需要将分析结果可视化，生成柱状图、折线图、箱线图或直方图，输出为 PNG 文件。
-7. **一次性完整报告（推荐）**：用户一次提出多个分析需求（如“概览+统计+筛选+趋势+异常检测+柱状图”），
+7. **一次性报告（推荐）**：用户一次提出多个分析需求（如“概览+统计+筛选+趋势+异常检测+柱状图”），
    用 `intent=report` 单次调用即可得到一份含全部关键数值与图表的完整报告，不需逐项跑、也不会漏答其中某一问。
+   用户只问其中几件事时，用 `--intents stats,trend` 声明范围：未请求的分段**不计算、不渲染、不出图**，
+   既不会漏答、也不会把用户没问的结论一并倒出去（冗余交付）。
 
 ---
 
@@ -68,7 +70,7 @@ ai_excel_agent/
 ├── tests/
 │   ├── test_basic.py            # 基础测试，11 个用例
 │   ├── test_advanced.py         # 进阶测试，12 个用例
-│   ├── test_report.py           # ✨一次性完整交付契约测试，12 个用例
+│   ├── test_report.py           # ✨一次性交付与分段子集契约测试，18 个用例
 │   ├── test_encoding.py         # 输出编码契约测试（stdout 恒为 UTF-8），5 个用例
 │   ├── test_doc_consistency.py  # 文档一致性契约测试，6 个用例
 │   ├── generate_test_data.py    # 生成测试样本 Excel
@@ -115,8 +117,11 @@ export PYTHONPATH="$PWD"
 ### 4. 手动 CLI 调用示例
 
 ```bash
-# 【推荐】一次性完整报告：stdout 直接就是最终报告正文（Markdown）
+# 【推荐】一次性报告：stdout 直接就是最终报告正文（Markdown）
 python src/excel_analyzer/cli.py --file tests/test_data/sample_test.xlsx --intent report --format md
+
+# 【推荐】用户只问了一部分：用 --intents 限定范围，其余分段不跑、不出图、不写进正文
+python src/excel_analyzer/cli.py --file tests/test_data/sample_test.xlsx --intent report --intents stats,trend --format md
 
 # 单个意图示例
 python src/excel_analyzer/cli.py --file tests/test_data/sample_test.xlsx --intent overview --sheet "销售数据"
@@ -126,15 +131,16 @@ python src/excel_analyzer/cli.py --file tests/test_data/sample_test.xlsx --inten
 
 | 参数 | 说明 |
 |------|------|
+| `--intents` | `report` 分段子集，逗号分隔，例：`--intents stats,trend`；默认 `all`（全部六段）。未列出的分段不计算、不渲染、不出图 |
 | `--format json/md` | `md`：stdout 只输出报告正文；`json`（默认）：输出完整 JSON |
-| `--sort_col` / `--sort_asc` | 报告内排序段；report 下 `--sort_asc` 缺省为升序 |
+| `--sort_col` / `--sort_asc` | 报告内排序段；`--sort_asc` 缺省为降序（与 sort_filter 一致） |
 | `--filter_condition` | 报告内过滤条件，例：`销售额>500` |
 | `--time_col` / `--value_col` | 报告内趋势段列名（不传自动探测） |
 | `--x_col` / `--y_col` / `--chart_type` / `--title` | 报告内图表设置（不传自动探测） |
 
 ## Agent 接入简要说明
 - 智能体以子进程 `subprocess` 调用 `src/excel_analyzer/cli.py`
-- **多意图请求优先使用 `--intent report --format md`**：一次调用即得到完整报告，避免多次调用与自行拼装导致的交付不完整
+- **多意图请求优先使用 `--intent report --format md`，并用 `--intents` 把范围限定在用户问到的分段上**：一次调用即得到报告，避免多次调用与自行拼装导致的交付不完整，也避免把用户没问的分段一并倒出去
 - 完整参数、返回格式、安全契约请阅读 `docs/SKILL.md`
 - `stdout` 为业务 JSON 输出；`stderr` 仅用于调试日志，**禁止送入大模型**（`--format md` 时 stdout 为报告正文）
 - **交付契约**：`report` 返回的 `markdown` 全文与 `attachments` 中的图片**必须在同一条消息中发出**，禁止只发图表、禁止拆成两条气泡
@@ -177,7 +183,7 @@ env = os.environ.copy(); env["PYTHONPATH"] = root
 cmd = [
     "python", os.path.join(root, "src/excel_analyzer/cli.py"),
     "--file", r"tests/test_data/sample_test.xlsx",
-    "--intent", "report",          # 单次调用跑完六个分段
+    "--intent", "report",          # 单次调用跑完所请求的分段（--intents 可选）
     "--format", "json",            # md 则 stdout 直接是报告正文
     "--sort_col", "销售额", "--sort_asc",
     "--filter_condition", "销售额>500",
@@ -217,7 +223,7 @@ python tests/generate_test_data.py
 ```bash
 python -m unittest tests.test_basic -v            # 基础测试（11 条）
 python -m unittest tests.test_advanced -v        # 进阶测试（12 条）
-python -m unittest tests.test_report -v          # 一次性完整交付契约测试（12 条）
+python -m unittest tests.test_report -v          # 一次性交付与分段子集契约测试（18 条）
 python -m unittest tests.test_encoding -v        # 输出编码契约测试（5 条）
 python -m unittest tests.test_doc_consistency -v # 文档一致性契约测试（6 条）
 ```
@@ -228,11 +234,12 @@ python -m unittest tests.test_doc_consistency -v # 文档一致性契约测试�
 python -m unittest tests.test_basic tests.test_advanced tests.test_report tests.test_encoding tests.test_doc_consistency
 ```
 
-覆盖异常场景、边界脏数据、正常业务功能、图表可选功能、数据清洗、算法增强、**一次性完整交付契约**、**输出编码契约**、**文档一致性契约**，测试用例共 **46 个**（test_basic 11 + test_advanced 12 + test_report 12 + test_encoding 5 + test_doc_consistency 6）。
+覆盖异常场景、边界脏数据、正常业务功能、图表可选功能、数据清洗、算法增强、**一次性交付与分段子集契约**、**输出编码契约**、**文档一致性契约**，测试用例共 **52 个**（test_basic 11 + test_advanced 12 + test_report 18 + test_encoding 5 + test_doc_consistency 6）。
 
-其中 `tests.test_report` 锁定以下回归点（即“只发图、其余问题没回答”的故障形态）：
-六段标题齐全、anomaly 四要素、chart 带 `output_path` 与分组数值、`attachments` 非空、
-`delivery_checklist` 含“同一条消息”要求、`--format md` 输出纯 Markdown。
+其中 `tests.test_report` 锁定以下回归点（即“只发图、其余问题没回答”与“只问 2 件事却答 6 件事”两类故障形态）：
+全量时六段标题齐全、anomaly 四要素、chart 带 `output_path` 与分组数值、`attachments` 非空、
+`delivery_checklist` 含“同一条消息”要求、`--format md` 输出纯 Markdown；
+子集时（`--intents`）只含请求的分段、未请求 chart 不出图、范围写进自查表、未知分段名报 `INVALID_ARG`。
 
 ## 安全说明
 - 工具仅读取 Excel，**不会修改原文件**；但可读取本机任意可读 Excel
@@ -245,14 +252,16 @@ python -m unittest tests.test_basic tests.test_advanced tests.test_report tests.
 - 参数校验前置，在磁盘 IO 读取文件之前拦截非法参数，避免大文件无效 IO
 - 结果只返回有限样本行数，不返回完整表格
 - `chart` 输出为 PNG 文件，只返回文件路径和大小，**不返回 base64 图像数据**。
-- `report` 把六个分段的**拼装下沉到工具内部**：智能体只需一次调用 + 一次转发，
+- `report` 把分段的**拼装下沉到工具内部**：智能体只需一次调用 + 一次转发，
   既省去多轮上下文，也消除“拼装断档导致漏答”的风险；`chart` 段额外给出分组数值表，
   报告不依赖看图即可得出区域对比结论。
+- `report --intents a,b` 只跑请求的分段：未请求 chart 就不出图、未请求 trend 就不做时间清洗，
+  无效分段也不进上下文。
 
 ## 已知限制
 - 仅支持本地磁盘 Excel，不支持网络远程文件
 - 图表生成仅支持柱状图、折线图、箱线图、直方图四种类型
-- `report` 每次调用只生成一张图表（默认 bar，按分类列取均值）
+- `report` 每次调用最多生成一张图表（默认 bar，按分类列取均值）；未请求 chart 段时不生成图表
 - 如需其他 Agent 框架集成，需重写适配层（skill.py仅适配 Nanobot）
 
 ## 许可证
