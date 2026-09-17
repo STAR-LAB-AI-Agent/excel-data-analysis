@@ -3,12 +3,25 @@ __pycache__/
 *.pyc
 *.pyo
 *.pyd
+.pytest_cache/
 
 # 日志
 logs/
 
-# 测试输出文件
-*.json
+# 运行时生成的配置（白名单配置，不提交到仓库）
+config/
+
+# 图表输出目录（可选功能生成的图表）
+outputs/
+
+# 测试输出文件（导出结果、临时脚本）
+tests/**/*.json
+tests/**/*.csv
+tests/**/*.png
+*.output.json
+
+# 分析产物：临时结果转储目录（不应提交，也不应长期留在项目根目录）
+analysis_out/
 
 # 环境、密钥
 .env
@@ -22,5 +35,6 @@ venv/
 *.swp
 *.swo
 
-# 项目运行时生成配置（白名单配置，不提交到仓库）
-config/*.json
+# 临时文件
+*.tmp
+tmp_*.py

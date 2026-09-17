@@ -11,7 +11,9 @@ from src.excel_analyzer.schemas import (
     ERR_PARSE_EXCEL_FAILED,
     ERR_COLUMN_NOT_FOUND,
     ERR_DATA_TYPE_ERR,
-    ERR_INTERNAL_ERROR
+    ERR_INTERNAL_ERROR,
+    ERR_CHART_GEN_FAILED,      # ✨ 新增
+    ERR_NO_NUMERIC_COL,        # ✨ 新增
 )
 
 
@@ -54,3 +56,13 @@ class ColumnNotFoundError(BaseBusinessError):
 
 class DataTypeError(BaseBusinessError):
     error_code = ERR_DATA_TYPE_ERR
+
+
+class ChartGenFailedError(BaseBusinessError):
+    """✨ 新增：图表生成失败"""
+    error_code = ERR_CHART_GEN_FAILED
+
+
+class NoNumericColumnError(BaseBusinessError):
+    """✨ 新增：无数值列可分析"""
+    error_code = ERR_NO_NUMERIC_COL
